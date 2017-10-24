@@ -41,14 +41,17 @@ class Reprojectimage():
             
     def projective_inverse_warp(self,datafolder):
         
-        
+        import pdb;pdb.set_trace()
         self.colmapfile = datafolder+"/images.txt"
-        I1 = pil.open(self.img1)
+        I = pil.open(self.img)
 
-        I2 = pil.open(self.img2)
+        I = np.array(I)
+        I1 = I[:,0:int(I.shape[1]/2),:]
+        I2 = I[:,int(I.shape[1]/2):,:]
+        #I2 = pil.open(self.img2)
 
-        I2 = np.array(I2)
-        I1 = np.array(I1)
+        #I2 = np.array(I2)
+        #I1 = np.array(I1)
 
         self.width = I1.shape[1]
         self.height = I1.shape[0]
@@ -56,8 +59,8 @@ class Reprojectimage():
         flow = self.readFlow(self.optflow)
 
         
-        r1,t1,_,_=util.get_camera_pose(self.colmapfile,self.img1.split('/')[-1])
-        r2,t2,_,_=util.get_camera_pose(self.colmapfile,self.img2.split('/')[-1])
+        r1,t1,_,_=util.get_camera_pose(self.colmapfile,'frame'+self.img.split('/')[-1].split('.')[0].split('_')[0]+'.jpg')
+        r2,t2,_,_=util.get_camera_pose(self.colmapfile,'frame'+self.img.split('/')[-1].split('.')[0].split('_')[1]+'.jpg')
 
 
         K = np.array([[float(567.239),0,float(376.04)],[0,float(261.757),float(100.961)],[0,0,1]])
@@ -96,20 +99,24 @@ class Reprojectimage():
         #Triangulation
         for i in range(I1.shape[0]):
             for j in range(I1.shape[1]):
-                import pdb;pdb.set_trace()
+                #import pdb;pdb.set_trace()
                 A = np.array((x_coord1[i,j]*P1[2,:]-P1[0,:],
                               y_coord1[i,j]*P1[2,:]-P1[1,:],
                               x_coord2[i,j]*P2[2,:]-P2[0,:],
                               y_coord2[i,j]*P2[2,:]-P2[1,:]))
+                A[0,:] = A[0,:]/np.linalg.norm(A[0,:])
+                A[1,:] = A[1,:]/np.linalg.norm(A[1,:])
+                A[2,:] = A[2,:]/np.linalg.norm(A[2,:])
+                A[3,:] = A[3,:]/np.linalg.norm(A[3,:])
 
                 U, s, V = np.linalg.svd(A, full_matrices=True)
 
                 if(i+j==0):
-                    X = np.expand_dims(V[0:3,-1]/V[-1,-1],axis=0)
-                    X1 = np.expand_dims(V[0:3,-1],axis=0)
+                    X = np.expand_dims(V[-1,0:3]/V[-1,-1],axis=0)
+                    #X1 = np.expand_dims(V[0:3,-1],axis=0)
                 else:
-                    X = np.append(X,np.expand_dims(V[0:3,-1]/V[-1,-1],axis=0),axis=0)
-                    X1 = np.append(X1,np.expand_dims(V[0:3,-1],axis=0),axis=0)
+                    X = np.append(X,np.expand_dims(V[-1,0:3]/V[-1,-1],axis=0),axis=0)
+                    #X1 = np.append(X1,np.expand_dims(V[0:3,-1],axis=0),axis=0)
                 
 
         #ttt=np.reshape(X,(240,720,3))
@@ -142,11 +149,16 @@ class Reprojectimage():
 
 if __name__ == '__main__':
 
-    test = Reprojectimage('filenames.txt')
-    ops = test.readTupleList()
-    for ent in ops:
+    # test = Reprojectimage('filenames.txt')
+    # ops = test.readTupleList()
+    # for ent in ops:
         
-        test.img1 = ent[0]
-        test.img2 = ent[1]
-        test.optflow = ent[2]
-        test.projective_inverse_warp('/home/wrlife/project/Unsupervised_Depth_Estimation/scripts/data/goodimages/case003/sfm_results/')
+    #     test.img1 = ent[0]
+    #     test.img2 = ent[1]
+    #     test.optflow = ent[2]
+    #     test.projective_inverse_warp('/home/wrlife/project/Unsupervised_Depth_Estimation/scripts/data/goodimages/case003/sfm_results/')
+    test = Reprojectimage('filenames.txt')
+
+    test.img = "/home/wrlife/Desktop/test/5941_5981.jpg"
+    test.optflow = "/home/wrlife/Desktop/test/5941_5981.flo.flo"
+    test.projective_inverse_warp('/home/wrlife/Desktop/test/')
